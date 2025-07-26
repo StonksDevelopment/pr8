@@ -19,7 +19,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Start SUT (app-order.jar)
-        run: java -jar ./artifacts/app-order.jar &
+        run: |
+          java -jar ./artifacts/app-order.jar &
+          sleep 15  # Увеличенное время для запуска
+
+      - name: Verify SUT is running
+        run: |
+          curl --retry 5 --retry-delay 5 --retry-connrefused http://localhost:9999
 
       - name: Run tests with Gradle
         run: ./gradlew test
