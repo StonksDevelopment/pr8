@@ -12,6 +12,8 @@ jobs:
         image: openjdk:11-jre-slim
         ports:
           - "7777:7777"
+        env:
+          SERVER_PORT: "7777"
         volumes:
           - ./artifacts:/artifacts
         options: >-
@@ -19,10 +21,6 @@ jobs:
           --health-interval=5s
           --health-timeout=2s
           --health-retries=5
-        env:
-          JAVA_OPTS: "-Dserver.port=7777"
-        run: |
-          java $JAVA_OPTS -jar /artifacts/app-order.jar
 
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +34,17 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Wait for app to start
+      - name: Start application
+        run: |
+          docker run -d \
+            --name myapp \
+            -p 7777:7777 \
+            -v $(pwd)/artifacts:/artifacts \
+            -e SERVER_PORT=7777 \
+            openjdk:11-jre-slim \
+            java -jar /artifacts/app-order.jar
+
+      - name: Wait for app
         run: |
           for i in {1..10}; do
             if curl -s http://localhost:7777; then
@@ -50,4 +58,4 @@ jobs:
 
       - name: Run tests
         run: |
-          ./gradlew test -Dselenide.baseUrl=http://localhost:7777elenide.baseUrl=http://localhost:7777
+          ./gradlew test -Dselenide.baseUrl=http://localhost:7777
