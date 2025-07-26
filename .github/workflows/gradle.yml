@@ -18,14 +18,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Start SUT (app-order.jar)
+      - name: Start SUT with explicit port
         run: |
-          java -jar ./artifacts/app-order.jar &
-          sleep 15  # Увеличенное время для запуска
-
-      - name: Verify SUT is running
-        run: |
-          curl --retry 5 --retry-delay 5 --retry-connrefused http://localhost:9999
+          java -jar ./artifacts/app-order.jar -port=7777 &
+          sleep 10  # Даём время на запуск
+          netstat -tulpn  # Проверяем открытые порты
+          ps aux | grep java  # Проверяем запущенные Java-процессы
 
       - name: Run tests with Gradle
-        run: ./gradlew test
+        run: |
+          ./gradlew test -Dselenide.baseUrl=http://localhost:7777

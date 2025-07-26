@@ -10,9 +10,9 @@ import static com.codeborne.selenide.Selenide.*;
 public class FieldValidationTest {
     @BeforeAll
     static void setUpAll() {
-        Configuration.headless = true;
-        Configuration.timeout = 10000; // Увеличиваем таймаут до 10 секунд
-        open("http://localhost:9999");
+        Configuration.baseUrl = "http://localhost:7777";
+        Configuration.timeout = 10000;
+        open("/");  // Теперь будет открывать http://localhost:7777/
     }
 
     @Test
