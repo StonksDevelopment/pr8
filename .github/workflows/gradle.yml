@@ -12,15 +12,10 @@ jobs:
         image: selenium/standalone-chrome
         ports:
           - 4444:4444
+        options: --health-cmd "curl -f http://localhost:4444 || exit 1" --health-interval 5s --health-timeout 2s --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
-
-      # Устанавливаем права для gradlew
-      - name: Set executable permissions
-        run: |
-          chmod +x gradlew
-          ls -la gradlew
 
       - name: Set up JDK 11
         uses: actions/setup-java@v3
@@ -28,29 +23,35 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
+      - name: Verify artifacts
+        run: |
+          ls -la artifacts/
+          [ -f artifacts/app-order.jar ] || exit 1
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Start application
         run: |
           java -jar ./artifacts/app-order.jar -port=8888 > app.log 2>&1 &
-          sleep 20
-          echo "=== Application logs ==="
+          sleep 15
+          echo "=== App logs ==="
           cat app.log
           echo "=== Network status ==="
           netstat -tulpn
+          echo "=== Checking port 8888 ==="
+          curl -v --retry 5 --retry-delay 3 http://localhost:8888
 
-      - name: Verify application
-        run: |
-          curl -v --retry 5 --retry-delay 5 http://localhost:8888
-
-      - name: Run tests
+      - name: Run tests with diagnostics
         run: |
           ./gradlew test \
             -Dselenide.baseUrl=http://localhost:8888 \
             -Dselenide.remote=http://localhost:4444/wd/hub \
             -Dselenide.browser=chrome \
-            --stacktrace --info
+            -Dselenide.headless=false \
+            --stacktrace --info --no-daemon
 
-      # Обновленная версия загрузки артефактов
-      - name: Upload test reports
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
