@@ -5,22 +5,6 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    services:
-      app:
-        image: openjdk:11-jre-slim
-        ports:
-          - "7777:7777"
-        env:
-          SERVER_PORT: "7777"
-        volumes:
-          - ./artifacts:/artifacts
-        options: >-
-          --health-cmd="curl -f http://localhost:7777 || exit 1"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -34,28 +18,12 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Start application
+      - name: Start app
         run: |
-          docker run -d \
-            --name myapp \
-            -p 7777:7777 \
-            -v $(pwd)/artifacts:/artifacts \
-            -e SERVER_PORT=7777 \
-            openjdk:11-jre-slim \
-            java -jar /artifacts/app-order.jar
-
-      - name: Wait for app
-        run: |
-          for i in {1..10}; do
-            if curl -s http://localhost:7777; then
-              echo "App is ready!"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "App failed to start"
-          exit 1
+          java -jar ./artifacts/app-order.jar -port=8888 &
+          sleep 10
+          curl http://localhost:8888
 
       - name: Run tests
         run: |
-          ./gradlew test -Dselenide.baseUrl=http://localhost:7777
+          ./gradlew test -Dselenide.baseUrl=http://localhost:8888
