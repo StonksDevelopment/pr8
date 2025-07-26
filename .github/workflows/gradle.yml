@@ -3,8 +3,26 @@ name: Java CI
 on: [push, pull_request]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      app:
+        image: openjdk:11-jre-slim
+        ports:
+          - "7777:7777"
+        volumes:
+          - ./artifacts:/artifacts
+        options: >-
+          --health-cmd="curl -f http://localhost:7777 || exit 1"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=5
+        env:
+          JAVA_OPTS: "-Dserver.port=7777"
+        run: |
+          java $JAVA_OPTS -jar /artifacts/app-order.jar
 
     steps:
       - uses: actions/checkout@v4
@@ -18,13 +36,18 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Start SUT with explicit port
+      - name: Wait for app to start
         run: |
-          java -jar ./artifacts/app-order.jar -port=7777 &
-          sleep 10  # Даём время на запуск
-          netstat -tulpn  # Проверяем открытые порты
-          ps aux | grep java  # Проверяем запущенные Java-процессы
+          for i in {1..10}; do
+            if curl -s http://localhost:7777; then
+              echo "App is ready!"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "App failed to start"
+          exit 1
 
-      - name: Run tests with Gradle
+      - name: Run tests
         run: |
-          ./gradlew test -Dselenide.baseUrl=http://localhost:7777
+          ./gradlew test -Dselenide.baseUrl=http://localhost:7777elenide.baseUrl=http://localhost:7777

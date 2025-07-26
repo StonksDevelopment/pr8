@@ -1,18 +1,20 @@
 package ru.netology;
 
 import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.codeborne.selenide.Selenide.*;
 
 public class CardOrderTest {
-
     @BeforeAll
-    static void setUpAll() {
-        // Для Selenium:
-        // WebDriverManager.chromedriver().setup();
-        open("http://localhost:9999");
+    static void setup() {
+        Configuration.baseUrl = "http://localhost:7777";
+        Configuration.browser = "chrome";
+        Configuration.remote = "http://localhost:4444/wd/hub"; // Для Selenium Grid
+        Configuration.timeout = 10000;
+        Configuration.headless = true;
     }
 
     @Test
