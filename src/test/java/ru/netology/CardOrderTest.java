@@ -10,11 +10,11 @@ import static com.codeborne.selenide.Selenide.*;
 public class CardOrderTest {
     @BeforeAll
     static void setup() {
-        Configuration.baseUrl = "http://localhost:7777";
+        Configuration.baseUrl = "http://localhost:8888";
+        Configuration.remote = "http://localhost:4444/wd/hub";
         Configuration.browser = "chrome";
-        Configuration.remote = "http://localhost:4444/wd/hub"; // Для Selenium Grid
-        Configuration.timeout = 10000;
-        Configuration.headless = true;
+        Configuration.timeout = 15000;
+        Configuration.headless = false; // Для Selenium Grid лучше отключить
     }
 
     @Test

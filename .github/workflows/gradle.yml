@@ -5,6 +5,13 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
 
     steps:
       - uses: actions/checkout@v4
@@ -15,15 +22,23 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
-      - name: Start app
+      - name: Start application
         run: |
-          java -jar ./artifacts/app-order.jar -port=8888 &
-          sleep 10
-          curl http://localhost:8888
+          java -jar ./artifacts/app-order.jar -port=8888 > app.log 2>&1 &
+          sleep 15
+          echo "=== App logs ==="
+          cat app.log
+          echo "=== Open ports ==="
+          netstat -tulpn
+
+      - name: Verify app
+        run: |
+          curl -v http://localhost:8888
 
       - name: Run tests
         run: |
-          ./gradlew test -Dselenide.baseUrl=http://localhost:8888
+          ./gradlew test \
+            -Dselenide.baseUrl=http://localhost:8888 \
+            -Dselenide.remote=http://localhost:4444/wd/hub \
+            -Dselenide.browser=chrome \
+            --info
